@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import uvicorn
@@ -11,15 +10,10 @@ import asyncio
 from contextlib import asynccontextmanager
 import json
 import requests
-import os
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Garantir que o diretório .wdm seja criado com permissões adequadas
-WDM_CACHE_DIR = "/app/.wdm"
-os.makedirs(WDM_CACHE_DIR, exist_ok=True)
 
 # Modelo para a requisição
 class RequestData(BaseModel):
@@ -40,15 +34,15 @@ class WebDriverManager:
         if self.driver is None:
             logger.info("Initializing Selenium WebDriver...")
             chrome_options = Options()
-            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--headless=new")  # Novo headless mode
             chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            try:
-                # Tentar usar webdriver-manager com cache explícito
-                service = Service(ChromeDriverManager(cache_path=WDM_CACHE_DIR).install())
-            except Exception as e:
-                logger.warning(f"Webdriver-manager failed: {str(e)}. Falling back to pre-installed ChromeDriver.")
-                service = Service("/usr/local/bin/chromedriver")
+            chrome_options.add_argument("--disable-dev-shm-usage")  # Evitar limitações de /dev/shm
+            chrome_options.add_argument("--disable-gpu")  # Desativar GPU
+            chrome_options.add_argument("--window-size=1920,1080")  # Definir tamanho da janela
+            chrome_options.add_argument("--disable-extensions")  # Desativar extensões
+            chrome_options.add_argument("--disable-infobars")  # Desativar barras de informação
+            chrome_options.add_argument("--disable-notifications")  # Desativar notificações
+            service = Service("/usr/local/bin/chromedriver")
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         return self.driver
 
