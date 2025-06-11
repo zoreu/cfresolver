@@ -56,12 +56,12 @@ class WebDriverManager:
             chrome_options.add_argument("--disable-extensions")
             chrome_options.add_argument("--disable-infobars")
             chrome_options.add_argument("--disable-notifications")
-            chrome_options.add_argument("--remote-debugging-port=9222")  # Para depuração
-            chrome_options.add_argument("--verbose")  # Aumentar logs
-            chrome_options.add_argument("--log-path=/app/chrome.log")  # Salvar logs do Chrome
+            chrome_options.add_argument("--remote-debugging-port=9222")
+            chrome_options.add_argument("--verbose")
+            chrome_options.add_argument("--log-path=/app/chrome.log")
             service = Service(
                 executable_path="/usr/local/bin/chromedriver",
-                log_path="/app/chromedriver.log"  # Salvar logs do ChromeDriver
+                log_path="/app/chromedriver.log"
             )
             try:
                 self.driver = webdriver.Chrome(service=service, options=chrome_options)
