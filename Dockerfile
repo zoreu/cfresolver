@@ -39,9 +39,6 @@ RUN git clone https://github.com/zoreu/cfresolver.git .
 # Instalar dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar o código do projeto
-COPY . .
-
 # Expor a porta do FastAPI
 EXPOSE 7860
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "4"]
