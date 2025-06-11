@@ -1,6 +1,5 @@
-fastapi
-uvicorn
+fastapi==0.115.0
+uvicorn==0.30.6
 selenium==4.25.0
-webdriver-manager==4.0.2
-pydantic
-requests
+pydantic==2.9.2
+requests==2.32.3
