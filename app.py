@@ -10,10 +10,24 @@ import asyncio
 from contextlib import asynccontextmanager
 import json
 import requests
+import subprocess
 
 # Configuração de logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()]
+)
 logger = logging.getLogger(__name__)
+
+# Verificar versões de Chrome e ChromeDriver no início
+try:
+    chrome_version = subprocess.check_output(["google-chrome", "--version"]).decode().strip()
+    chromedriver_version = subprocess.check_output(["chromedriver", "--version"]).decode().strip()
+    logger.info(f"Google Chrome version: {chrome_version}")
+    logger.info(f"ChromeDriver version: {chromedriver_version}")
+except Exception as e:
+    logger.error(f"Failed to check versions: {str(e)}")
 
 # Modelo para a requisição
 class RequestData(BaseModel):
@@ -34,22 +48,36 @@ class WebDriverManager:
         if self.driver is None:
             logger.info("Initializing Selenium WebDriver...")
             chrome_options = Options()
-            chrome_options.add_argument("--headless=new")  # Novo headless mode
+            chrome_options.add_argument("--headless=new")
             chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")  # Evitar limitações de /dev/shm
-            chrome_options.add_argument("--disable-gpu")  # Desativar GPU
-            chrome_options.add_argument("--window-size=1920,1080")  # Definir tamanho da janela
-            chrome_options.add_argument("--disable-extensions")  # Desativar extensões
-            chrome_options.add_argument("--disable-infobars")  # Desativar barras de informação
-            chrome_options.add_argument("--disable-notifications")  # Desativar notificações
-            service = Service("/usr/local/bin/chromedriver")
-            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-infobars")
+            chrome_options.add_argument("--disable-notifications")
+            chrome_options.add_argument("--remote-debugging-port=9222")  # Para depuração
+            chrome_options.add_argument("--verbose")  # Aumentar logs
+            chrome_options.add_argument("--log-path=/app/chrome.log")  # Salvar logs do Chrome
+            service = Service(
+                executable_path="/usr/local/bin/chromedriver",
+                log_path="/app/chromedriver.log"  # Salvar logs do ChromeDriver
+            )
+            try:
+                self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                logger.info("WebDriver initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize WebDriver: {str(e)}")
+                raise
         return self.driver
 
     def stop_driver(self):
         if self.driver is not None:
             logger.info("Shutting down Selenium WebDriver...")
-            self.driver.quit()
+            try:
+                self.driver.quit()
+            except Exception as e:
+                logger.warning(f"Failed to quit driver: {str(e)}")
             self.driver = None
 
     async def reset_driver(self):
@@ -135,3 +163,6 @@ async def proxy_get(url: str, params: dict = None, headers: dict = None):
 async def proxy_post(request_data: RequestData):
     result = await fetch_page(request_data)
     return result
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=7860)
